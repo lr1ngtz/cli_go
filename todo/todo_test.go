@@ -18,7 +18,7 @@ func TestAdd(t *testing.T) {
 
 func TestComplete(t *testing.T) {
 	l := List{}
-	
+
 	taskName := "New task"
 	l.Add(taskName)
 
@@ -29,7 +29,7 @@ func TestComplete(t *testing.T) {
 	if l[0].Done {
 		t.Errorf("New task should not be completed.")
 	}
-	
+
 	l.Complete(1)
 	if !l[0].Done {
 		t.Errorf("New task should be completed.")
@@ -38,7 +38,7 @@ func TestComplete(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	l := List{}
-	
+
 	tasks := []string{
 		"New task 1",
 		"New task 2",
@@ -62,7 +62,6 @@ func TestDelete(t *testing.T) {
 		t.Errorf("Expected %q, got %q instead.", tasks[2], l[1].Task)
 	}
 }
-
 
 func TestSave(t *testing.T) {
 	l1 := List{}
