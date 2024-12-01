@@ -13,21 +13,30 @@ import (
 
 var todoFileName = ".todo.json"
 
-func getTask(r io.Reader, args ...string) (string, error) {
+func getTask(r io.Reader, args ...string) ([]string, error) {
 	if len(args) > 0 {
-		return strings.Join(args, " "), nil
+		return []string{strings.Join(args, " ")}, nil
 	}
+
 	s := bufio.NewScanner(r)
-	s.Scan()
-	if err := s.Err(); err != nil {
-		return "", err
+	var tasks []string
+
+	for s.Scan() {
+		line := s.Text()
+		if len(line) > 0 {
+			tasks = append(tasks, line)
+		}
 	}
 
-	if len(s.Text()) == 0 {
-		return "", fmt.Errorf("task cannot be blank")
+	if err := s.Err(); err != nil && err != io.EOF {
+		return nil, err
 	}
 
-	return s.Text(), nil
+	if len(tasks) == 0 {
+		return nil, fmt.Errorf("task cannot be blank")
+	}
+
+	return tasks, nil
 }
 
 func main() {
@@ -42,6 +51,8 @@ func main() {
 	list := flag.Bool("list", false, "List all tasks")
 	complete := flag.Int("complete", 0, "Item to be completed")
 	delete := flag.Int("del", 0, "Item to be deleted")
+	verboseOutput := flag.Bool("verb", false, "List all tasks verbose output")
+	listNotCompleted := flag.Bool("listnc", false, "List not completed tasks")
 	flag.Parse()
 
 	if os.Getenv("TODO_FILENAME") != "" {
@@ -72,7 +83,9 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		l.Add(t)
+		for _, task := range t {
+			l.Add(task)
+		}
 
 		if err := l.Save(todoFileName); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -87,6 +100,20 @@ func main() {
 		if err := l.Save(todoFileName); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
+		}
+	case *verboseOutput:
+		for _, task := range *l {
+			fmt.Fprintf(
+				os.Stderr,
+				"Task: %s\nCreated at: %s\nCompleted at: %s\n\n\n",
+				task.Task, task.CreatedAt.String(), task.CompletedAt.String(),
+			)
+		}
+	case *listNotCompleted:
+		for _, task := range *l {
+			if !task.Done {
+				fmt.Println(task)
+			}
 		}
 	default:
 		fmt.Fprintln(os.Stderr, "Invalid option")
